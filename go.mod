@@ -3,6 +3,7 @@ module github.com/Arturyus92/auth
 go 1.19
 
 require (
+	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	google.golang.org/grpc v1.61.0
 	google.golang.org/protobuf v1.32.0
 )
