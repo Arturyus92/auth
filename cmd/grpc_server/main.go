@@ -21,10 +21,8 @@ type server struct {
 	desc.UnimplementedUserV1Server
 }
 
-// Get ...
-func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetResponse, error) {
+func (s *server) Get(_ context.Context, req *desc.GetRequest) (*desc.GetResponse, error) {
 	log.Printf("User id: %d", req.GetId())
-	defer ctx.Done()
 
 	return &desc.GetResponse{
 		Id:        req.GetId(),
@@ -36,25 +34,22 @@ func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetRespon
 	}, nil
 }
 
-func (s *server) Create(ctx context.Context, req *desc.CreateRequest) (*desc.CreateResponse, error) {
+func (s *server) Create(_ context.Context, req *desc.CreateRequest) (*desc.CreateResponse, error) {
 	log.Printf("User created: %+v", req.String())
-	defer ctx.Done()
 
 	return &desc.CreateResponse{
 		Id: gofakeit.Int64(),
 	}, nil
 }
 
-func (s *server) Update(ctx context.Context, req *desc.UpdateRequest) (*emptypb.Empty, error) {
+func (s *server) Update(_ context.Context, req *desc.UpdateRequest) (*emptypb.Empty, error) {
 	log.Printf("User updated: %+v", req.String())
-	defer ctx.Done()
 
 	return &emptypb.Empty{}, nil
 }
 
-func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*emptypb.Empty, error) {
+func (s *server) Delete(_ context.Context, req *desc.DeleteRequest) (*emptypb.Empty, error) {
 	log.Printf("User deleted: %+v", req.String())
-	defer ctx.Done()
 
 	return &emptypb.Empty{}, nil
 }
