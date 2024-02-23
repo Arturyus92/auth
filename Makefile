@@ -43,19 +43,8 @@ copy-to-server:
 
 docker-build-and-push:
 	docker buildx build --no-cache --platform linux/amd64 -t cr.selcloud.ru/arturius92/auth_service:v0.0.1 .
-	docker login -u token -p CRgAAAAAreVycGPGQGFnfbItwgYyhBy319hsAKN5 cr.selcloud.ru/arturius92
+	docker login -u token -p <TOKEN> cr.selcloud.ru/arturius92
 	docker push cr.selcloud.ru/arturius92/auth_service:v0.0.1
-
-docker-compose-psql-build-and-push:
-	docker-compose build
-	docker image tag postgres cr.selcloud.ru/arturius92/postgres:14-alpine3.17
-	docker image tag auth-migrator cr.selcloud.ru/arturius92/auth-migrator:v0.0.1
-	docker login -u token -p CRgAAAAAreVycGPGQGFnfbItwgYyhBy319hsAKN5 cr.selcloud.ru/arturius92
-	docker push cr.selcloud.ru/arturius92/auth-migrator:v0.0.1
-	docker push cr.selcloud.ru/arturius92/postgres:14-alpine3.17
-
-#docker pull cr.selcloud.ru/arturius92/auth-migrator:v0.0.1
-#docker run cr.selcloud.ru/arturius92/auth-migrator:v0.0.1
 
 local-migration-status:
 	${LOCAL_BIN}/goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN} status -v
