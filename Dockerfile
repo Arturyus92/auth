@@ -11,6 +11,5 @@ FROM alpine:latest
 WORKDIR /root/
 COPY --from=builder /github.com/Arturyus92/auth/source/bin/auth_service .
 ADD prod.env .
-EXPOSE 50052
 
 CMD ["./auth_service"]

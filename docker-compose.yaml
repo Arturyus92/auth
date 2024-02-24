@@ -6,7 +6,6 @@ volumes:
 services:
   pg-prod:
     image: postgres:14-alpine3.17
-    container_name: pg-prod
     env_file:
       - prod.env
     ports:
@@ -21,4 +20,3 @@ services:
     restart: on-failure
     environment:
       DB_HOST: pg-prod
-

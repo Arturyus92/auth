@@ -101,10 +101,11 @@ func (s *server) Update(ctx context.Context, req *desc.UpdateRequest) (*emptypb.
 	// Делаем запрос на обновление записи в таблице auth
 	builderUpdate := sq.Update("auth").
 		PlaceholderFormat(sq.Dollar).
-		Set("name", req.Name).
-		Set("email", req.Email).
+		Set("name", req.GetName().Value).
+		Set("email", req.GetEmail().Value).
+		Set("role", req.GetRole()).
 		Set("updated_at", time.Now()).
-		Where(sq.Eq{"user_id": req.Id})
+		Where(sq.Eq{"user_id": req.GetId()})
 
 	query, args, err := builderUpdate.ToSql()
 	if err != nil {
@@ -120,7 +121,7 @@ func (s *server) Update(ctx context.Context, req *desc.UpdateRequest) (*emptypb.
 
 	// Делаем запрос на получение измененной записи из таблицы auth
 	builderSelectOne := sq.Select("user_id", "name", "email", "created_at", "updated_at").
-		From("note").
+		From("auth").
 		PlaceholderFormat(sq.Dollar).
 		Where(sq.Eq{"user_id": req.Id}).
 		Limit(1)
