@@ -28,9 +28,12 @@ func ToUserFromService(user *model.User) *desc.User {
 
 // ToUserFromDesc - ...
 func ToUserFromDesc(user *desc.User) *model.User {
-	updatedAt := sql.NullTime{
-		Time:  user.UpdatedAt.AsTime(),
-		Valid: true,
+	var updatedAt sql.NullTime
+	if user.CreatedAt != nil {
+		updatedAt = sql.NullTime{
+			Time:  user.UpdatedAt.AsTime(),
+			Valid: true,
+		}
 	}
 
 	return &model.User{
@@ -45,7 +48,6 @@ func ToUserFromDesc(user *desc.User) *model.User {
 
 // ToUserCreateFromDesc - ...
 func ToUserCreateFromDesc(user *desc.UserToCreate) *model.UserToCreate {
-
 	return &model.UserToCreate{
 		Name:            user.Name,
 		Email:           user.Email,
@@ -57,11 +59,23 @@ func ToUserCreateFromDesc(user *desc.UserToCreate) *model.UserToCreate {
 
 // ToUserUpdateFromDesc - ...
 func ToUserUpdateFromDesc(user *desc.UserToUpdate) *model.UserToUpdate {
-
+	var name, email sql.NullString
+	if user.Name != nil {
+		name = sql.NullString{
+			String: user.Name.GetValue(),
+			Valid:  true,
+		}
+	}
+	if user.Email != nil {
+		email = sql.NullString{
+			String: user.Email.GetValue(),
+			Valid:  true,
+		}
+	}
 	return &model.UserToUpdate{
 		ID:    user.Id,
-		Name:  user.Name.GetValue(),
-		Email: user.Email.GetValue(),
+		Name:  name,
+		Email: email,
 		Role:  int32(user.Role),
 	}
 }

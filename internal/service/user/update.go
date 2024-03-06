@@ -8,8 +8,7 @@ import (
 )
 
 // Update - ...
-func (s *serv) Update(ctx context.Context, user *model.UserToUpdate) error {
-
+func (s *service) Update(ctx context.Context, user *model.UserToUpdate) error {
 	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
 		errTx := s.userRepository.Update(ctx, user)
 		if errTx != nil {
@@ -17,7 +16,7 @@ func (s *serv) Update(ctx context.Context, user *model.UserToUpdate) error {
 		}
 
 		errTx = s.logRepository.CreateLog(ctx, &model.Log{
-			Info: fmt.Sprintf("User updated: %d", user.ID),
+			Text: fmt.Sprintf("User updated: %d", user.ID),
 		})
 		if errTx != nil {
 			return errTx

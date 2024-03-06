@@ -3,20 +3,20 @@ package user
 import (
 	"github.com/Arturyus92/auth/internal/client/db"
 	"github.com/Arturyus92/auth/internal/repository"
-	"github.com/Arturyus92/auth/internal/service"
+	def "github.com/Arturyus92/auth/internal/service"
 )
 
-var _ service.UserService = (*serv)(nil)
+var _ def.UserService = (*service)(nil)
 
-type serv struct {
+type service struct {
 	userRepository repository.UserRepository
 	txManager      db.TxManager
 	logRepository  repository.LogRepository
 }
 
 // NewService - ...
-func NewService(userRepository repository.UserRepository, txManager db.TxManager, logRepository repository.LogRepository) *serv {
-	return &serv{
+func NewService(userRepository repository.UserRepository, txManager db.TxManager, logRepository repository.LogRepository) *service {
+	return &service{
 		userRepository: userRepository,
 		txManager:      txManager,
 		logRepository:  logRepository,

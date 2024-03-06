@@ -8,7 +8,7 @@ import (
 )
 
 // Delete - ...
-func (s *serv) Delete(ctx context.Context, id int64) error {
+func (s *service) Delete(ctx context.Context, id int64) error {
 	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
 		var errTx error
 		errTx = s.userRepository.Delete(ctx, id)
@@ -17,7 +17,7 @@ func (s *serv) Delete(ctx context.Context, id int64) error {
 		}
 
 		errTx = s.logRepository.CreateLog(ctx, &model.Log{
-			Info: fmt.Sprintf("User deleted: %d", id),
+			Text: fmt.Sprintf("User deleted: %d", id),
 		})
 		if errTx != nil {
 			return errTx

@@ -32,17 +32,19 @@ func (r *Repo) CreateLog(ctx context.Context, log *model.Log) error {
 	builderInsert := sq.Insert(tableName).
 		PlaceholderFormat(sq.Dollar).
 		Columns(colInfo).
-		Values(log.Info).
+		Values(log.Text).
 		Suffix("RETURNING " + colLogID)
 
 	query, args, err := builderInsert.ToSql()
 	if err != nil {
 		return err
 	}
+
 	q := db.Query{
 		Name:     "log_repository.CreateLog",
 		QueryRaw: query,
 	}
+
 	var id int64
 	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&id)
 	if err != nil {

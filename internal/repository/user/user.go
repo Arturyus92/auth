@@ -49,10 +49,12 @@ func (r *Repo) Get(ctx context.Context, id int64) (*model.User, error) {
 		log.Printf("failed to build query: %v", err)
 		return nil, err
 	}
+
 	q := db.Query{
 		Name:     "user_repository.Get",
 		QueryRaw: query,
 	}
+
 	var getUser modelRepo.User
 	err = r.db.DB().ScanOneContext(ctx, &getUser, q, args...)
 	if err != nil {
@@ -76,10 +78,12 @@ func (r *Repo) Create(ctx context.Context, user *model.UserToCreate) (int64, err
 		log.Printf("failed to build query: %v", err)
 		return 0, err
 	}
+
 	q := db.Query{
 		Name:     "user_repository.Create",
 		QueryRaw: query,
 	}
+
 	var userID int64
 	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&userID)
 	if err != nil {
@@ -94,10 +98,10 @@ func (r *Repo) Create(ctx context.Context, user *model.UserToCreate) (int64, err
 func (r *Repo) Update(ctx context.Context, user *model.UserToUpdate) error {
 	// Делаем запрос на обновление записи в таблице auth
 	builderUpdate := sq.Update(tableName).PlaceholderFormat(sq.Dollar)
-	if len(user.Name) > 0 {
+	if len(user.Name.String) > 0 {
 		builderUpdate = builderUpdate.Set(colName, user.Name)
 	}
-	if len(user.Email) > 0 {
+	if len(user.Email.String) > 0 {
 		builderUpdate = builderUpdate.Set(colEmail, user.Email)
 	}
 	if user.Role != 0 {
@@ -117,6 +121,7 @@ func (r *Repo) Update(ctx context.Context, user *model.UserToUpdate) error {
 		Name:     "user_repository.Update",
 		QueryRaw: query,
 	}
+
 	_, err = r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
 		log.Printf("failed to updated user: %v", err)
@@ -140,10 +145,12 @@ func (r *Repo) Delete(ctx context.Context, id int64) error {
 		log.Printf("failed to build query: %v", err)
 		return err
 	}
+
 	q := db.Query{
 		Name:     "user_repository.Get_Delete",
 		QueryRaw: query,
 	}
+
 	var getUser modelRepo.User
 	err = r.db.DB().ScanOneContext(ctx, &getUser, q, args...)
 	if err != nil {
