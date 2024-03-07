@@ -1,0 +1,1 @@
+GOBIN=$(pwd)/bin golangci-lint run ./... --config .golangci.pipeline.yaml
