@@ -3,8 +3,8 @@ package user
 import (
 	"context"
 
-	"github.com/Arturyus92/auth/internal/client/db"
 	"github.com/Arturyus92/auth/internal/model"
+	"github.com/Arturyus92/platform_common/pkg/db"
 	sq "github.com/Masterminds/squirrel"
 )
 
