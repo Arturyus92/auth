@@ -2,3 +2,4 @@
 /bin/
 *.env
 /scripts/
+/coverage.out

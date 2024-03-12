@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/Arturyus92/auth/internal/closer"
 	"github.com/Arturyus92/auth/internal/config"
 	desc "github.com/Arturyus92/auth/pkg/user_v1"
+	"github.com/Arturyus92/platform_common/pkg/closer"
 )
 
 var configPath string

@@ -26,26 +26,6 @@ func ToUserFromService(user *model.User) *desc.User {
 	}
 }
 
-// ToUserFromDesc - ...
-func ToUserFromDesc(user *desc.User) *model.User {
-	var updatedAt sql.NullTime
-	if user.CreatedAt != nil {
-		updatedAt = sql.NullTime{
-			Time:  user.UpdatedAt.AsTime(),
-			Valid: true,
-		}
-	}
-
-	return &model.User{
-		ID:        user.Id,
-		Name:      user.Name,
-		Email:     user.Email,
-		Role:      int32(user.Role),
-		CreatedAt: user.CreatedAt.AsTime(),
-		UpdatedAt: updatedAt,
-	}
-}
-
 // ToUserCreateFromDesc - ...
 func ToUserCreateFromDesc(user *desc.UserToCreate) *model.UserToCreate {
 	return &model.UserToCreate{

@@ -5,10 +5,6 @@ import (
 	"log"
 
 	"github.com/Arturyus92/auth/internal/api/user"
-	"github.com/Arturyus92/auth/internal/client/db"
-	"github.com/Arturyus92/auth/internal/client/db/pg"
-	"github.com/Arturyus92/auth/internal/client/db/transaction"
-	"github.com/Arturyus92/auth/internal/closer"
 	"github.com/Arturyus92/auth/internal/config"
 	"github.com/Arturyus92/auth/internal/config/env"
 	"github.com/Arturyus92/auth/internal/repository"
@@ -16,6 +12,10 @@ import (
 	userRepository "github.com/Arturyus92/auth/internal/repository/user"
 	"github.com/Arturyus92/auth/internal/service"
 	userService "github.com/Arturyus92/auth/internal/service/user"
+	"github.com/Arturyus92/platform_common/pkg/closer"
+	"github.com/Arturyus92/platform_common/pkg/db"
+	"github.com/Arturyus92/platform_common/pkg/db/pg"
+	"github.com/Arturyus92/platform_common/pkg/db/transaction"
 )
 
 type serviceProvider struct {

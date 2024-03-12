@@ -7,10 +7,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 
-	"github.com/Arturyus92/auth/internal/client/db"
 	"github.com/Arturyus92/auth/internal/model"
 	"github.com/Arturyus92/auth/internal/repository/user/converter"
 	modelRepo "github.com/Arturyus92/auth/internal/repository/user/model"
+	"github.com/Arturyus92/platform_common/pkg/db"
 )
 
 const (
