@@ -3,3 +3,4 @@
 *.env
 /scripts/
 /coverage.out
+/vendor.protogen/
