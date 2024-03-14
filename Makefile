@@ -33,13 +33,15 @@ generate:
 
 generate-user-api:
 	mkdir -p pkg/user_v1
-	protoc --proto_path api/user_v1 \
+	protoc --proto_path api/user_v1 --proto_path vendor.protogen \
 	--go_out=pkg/user_v1 --go_opt=paths=source_relative \
 	--plugin=protoc-gen-go=bin/protoc-gen-go.exe \
 	--go-grpc_out=pkg/user_v1 --go-grpc_opt=paths=source_relative \
 	--plugin=protoc-gen-go-grpc=bin/protoc-gen-go-grpc.exe \
 	--grpc-gateway_out=pkg/user_v1 --grpc-gateway_opt=paths=source_relative \
 	--plugin=protoc-gen-grpc-gateway=bin/protoc-gen-grpc-gateway.exe \
+	--validate_out lang=go:pkg/user_v1 --validate_opt=paths=source_relative \
+	--plugin=protoc-gen-validate=bin/protoc-gen-validate.exe \
 	api/user_v1/user.proto
 
 build:
@@ -82,4 +84,10 @@ vendor-proto:
 			mkdir -p  vendor.protogen/google/ &&\
 			mv vendor.protogen/googleapis/google/api vendor.protogen/google &&\
 			rm -rf vendor.protogen/googleapis ;\
+		fi
+		@if [ ! -d vendor.protogen/validate ]; then \
+			mkdir -p vendor.protogen/validate &&\
+			git clone https://github.com/envoyproxy/protoc-gen-validate vendor.protogen/protoc-gen-validate &&\
+			mv vendor.protogen/protoc-gen-validate/validate/*.proto vendor.protogen/validate &&\
+			rm -rf vendor.protogen/protoc-gen-validate ;\
 		fi
