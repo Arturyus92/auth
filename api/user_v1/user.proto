@@ -22,7 +22,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 	  };
 	};
   
-	host: "0.0.0.0:8080",
+	host: "localhost:8080",
 	schemes: HTTP,
 	schemes: HTTPS,
 	consumes: "application/json",
