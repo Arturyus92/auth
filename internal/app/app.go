@@ -151,16 +151,19 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 		return err
 	}
 
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Content-Type", "Content-Length", "Authorization"},
-		AllowCredentials: true,
-	})
+	/*
+		corsMiddleware := cors.New(cors.Options{
+			AllowedOrigins:   []string{"*"},
+			AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"Accept", "Content-Type", "Content-Length", "Authorization"},
+			AllowCredentials: true,
+		})*/
+
+	corsMid := cors.AllowAll()
 
 	a.httpServer = &http.Server{
 		Addr:    a.serviceProvider.HTTPConfig().Address(),
-		Handler: corsMiddleware.Handler(mux),
+		Handler: corsMid.Handler(mux),
 	}
 
 	return nil
