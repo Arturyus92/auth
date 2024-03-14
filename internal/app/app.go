@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,7 +22,7 @@ import (
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/cors"
 
-	_ "github.com/Arturyus92/auth/statik"
+	_ "github.com/Arturyus92/auth/statik" //Статика swagger
 )
 
 var configPath string
@@ -151,19 +152,17 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 		return err
 	}
 
-	/*
-		corsMiddleware := cors.New(cors.Options{
-			AllowedOrigins:   []string{"*"},
-			AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
-			AllowedHeaders:   []string{"Accept", "Content-Type", "Content-Length", "Authorization"},
-			AllowCredentials: true,
-		})*/
-
-	corsMid := cors.AllowAll()
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Content-Type", "Content-Length", "Authorization"},
+		AllowCredentials: true,
+	})
 
 	a.httpServer = &http.Server{
-		Addr:    a.serviceProvider.HTTPConfig().Address(),
-		Handler: corsMid.Handler(mux),
+		Addr:              a.serviceProvider.HTTPConfig().Address(),
+		Handler:           corsMiddleware.Handler(mux),
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	return nil
@@ -180,8 +179,9 @@ func (a *App) initSwaggerServer(_ context.Context) error {
 	mux.HandleFunc("/api.swagger.json", serveSwaggerFile("/api.swagger.json"))
 
 	a.swaggerServer = &http.Server{
-		Addr:    a.serviceProvider.SwaggerConfig().Address(),
-		Handler: mux,
+		Addr:              a.serviceProvider.SwaggerConfig().Address(),
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	return nil
@@ -242,7 +242,7 @@ func serveSwaggerFile(path string) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		defer file.Close()
+		closer.Add(file.Close)
 
 		log.Printf("Read swagger file: %s", path)
 
