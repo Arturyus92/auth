@@ -3,3 +3,4 @@
 /scripts/
 /coverage.out
 /vendor.protogen/
+/pkg/swagger/

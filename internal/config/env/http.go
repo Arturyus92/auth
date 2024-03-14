@@ -15,16 +15,13 @@ const (
 	httpPortEnvName = "HTTP_PORT"
 )
 
-type HTTPConfig interface {
-	Address() string
-}
-
 type httpConfig struct {
 	host string
 	port string
 }
 
-func NewHTTPConfig() (config.HTTPConfig, error) {
+// NewHTTPConfig - ...
+func NewHTTPConfig() (*httpConfig, error) {
 	host := os.Getenv(httpHostEnvName)
 	if len(host) == 0 {
 		return nil, errors.New("http host not found")
