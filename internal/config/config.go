@@ -9,6 +9,16 @@ type GRPCConfig interface {
 	Address() string
 }
 
+// HTTPConfig - ...
+type HTTPConfig interface {
+	Address() string
+}
+
+// SwaggerConfig - ...
+type SwaggerConfig interface {
+	Address() string
+}
+
 // PGConfig - ...
 type PGConfig interface {
 	DSN() string

@@ -1,5 +1,7 @@
 .idea
 /bin/
-*.env
 /scripts/
+*.env
 /coverage.out
+/vendor.protogen/
+/pkg/swagger/
