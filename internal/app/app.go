@@ -27,6 +27,8 @@ import (
 
 var configPath string
 
+const readHeaderTimeout = 5 * time.Second
+
 func init() {
 	flag.StringVar(&configPath, "config-path", "prod.env", "path to config file")
 }
@@ -162,7 +164,7 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 	a.httpServer = &http.Server{
 		Addr:              a.serviceProvider.HTTPConfig().Address(),
 		Handler:           corsMiddleware.Handler(mux),
-		ReadHeaderTimeout: 5 * time.Second,
+		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
 	return nil
@@ -181,7 +183,7 @@ func (a *App) initSwaggerServer(_ context.Context) error {
 	a.swaggerServer = &http.Server{
 		Addr:              a.serviceProvider.SwaggerConfig().Address(),
 		Handler:           mux,
-		ReadHeaderTimeout: 5 * time.Second,
+		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
 	return nil
