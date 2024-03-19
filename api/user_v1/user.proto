@@ -22,7 +22,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 	  };
 	};
   
-	host: "localhost:8080",
+	host: "artmonini.ddns.net:8080",
 	schemes: HTTP,
 	schemes: HTTPS,
 	consumes: "application/json",
@@ -33,7 +33,7 @@ service UserV1 {
 	//Создание пользователя
   rpc Create(CreateRequest) returns (CreateResponse){
 	option (google.api.http) = {
-		post: "/user/v1/create"
+		post: "/user/v1"
 		body: "*"
 	};
   }
