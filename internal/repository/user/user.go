@@ -39,7 +39,7 @@ func NewRepository(db db.Client) *Repo {
 // GetLogin - ...
 func (r *Repo) GetLogin(ctx context.Context, username string) (*model.User, error) {
 	// Делаем запрос на получение записи по username из таблицы auth
-	builderSelectOne := sq.Select(colUserID, colName, colEmail, colRole, colCreatedAt, colUpdatedAt).
+	builderSelectOne := sq.Select(colName, colRole, colPassword).
 		From(tableName).
 		PlaceholderFormat(sq.Dollar).
 		Where(sq.Eq{colName: username}).
