@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 
+	"github.com/Arturyus92/auth/internal/api/access"
+	"github.com/Arturyus92/auth/internal/api/auth"
 	"github.com/Arturyus92/auth/internal/api/user"
 	"github.com/Arturyus92/auth/internal/config"
 	"github.com/Arturyus92/auth/internal/config/env"
@@ -11,6 +13,8 @@ import (
 	logRepository "github.com/Arturyus92/auth/internal/repository/log"
 	userRepository "github.com/Arturyus92/auth/internal/repository/user"
 	"github.com/Arturyus92/auth/internal/service"
+	accessService "github.com/Arturyus92/auth/internal/service/access"
+	authService "github.com/Arturyus92/auth/internal/service/auth"
 	userService "github.com/Arturyus92/auth/internal/service/user"
 	"github.com/Arturyus92/platform_common/pkg/closer"
 	"github.com/Arturyus92/platform_common/pkg/db"
@@ -28,9 +32,14 @@ type serviceProvider struct {
 	txManager      db.TxManager
 	userRepository repository.UserRepository
 	logRepository  repository.LogRepository
-	userService    service.UserService
 
-	userImpl *user.Implementation
+	userService   service.UserService
+	authService   service.AuthService
+	accessService service.AccessService
+
+	userImpl   *user.Implementation
+	authImpl   *auth.Implementation
+	accessImpl *access.Implementation
 }
 
 func newServiceProvider() *serviceProvider {
@@ -153,6 +162,24 @@ func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
 	return s.userService
 }
 
+// AccessService - ...
+func (s *serviceProvider) AccessService(ctx context.Context) service.AccessService {
+	if s.accessService == nil {
+		s.accessService = accessService.NewService()
+	}
+
+	return s.accessService
+}
+
+// AuthService - ...
+func (s *serviceProvider) AuthService(ctx context.Context) service.AuthService {
+	if s.authService == nil {
+		s.authService = authService.NewService(s.UserRepository(ctx))
+	}
+
+	return s.authService
+}
+
 // UserImpl - ...
 func (s *serviceProvider) UserImpl(ctx context.Context) *user.Implementation {
 	if s.userImpl == nil {
@@ -160,4 +187,22 @@ func (s *serviceProvider) UserImpl(ctx context.Context) *user.Implementation {
 	}
 
 	return s.userImpl
+}
+
+// AuthImpl - ...
+func (s *serviceProvider) AuthImpl(ctx context.Context) *auth.Implementation {
+	if s.authImpl == nil {
+		s.authImpl = auth.NewImplementation(s.AuthService(ctx))
+	}
+
+	return s.authImpl
+}
+
+// AccessImpl - ...
+func (s *serviceProvider) AccessImpl(ctx context.Context) *access.Implementation {
+	if s.accessImpl == nil {
+		s.accessImpl = access.NewImplementation(s.AccessService(ctx))
+	}
+
+	return s.accessImpl
 }
