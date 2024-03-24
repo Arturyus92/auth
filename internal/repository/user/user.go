@@ -102,6 +102,7 @@ func (r *Repo) Create(ctx context.Context, user *model.UserToCreate) (int64, err
 		return 0, err
 	}
 	user.Password = string(hashedPassword)
+	log.Printf("\n!!!user.Password: %v\n", user.Password)
 
 	// Делаем запрос на вставку записи в таблицу auth
 	builderInsert := sq.Insert(tableName).
