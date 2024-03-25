@@ -11,6 +11,7 @@ import (
 	"github.com/Arturyus92/auth/internal/config/env"
 	"github.com/Arturyus92/auth/internal/repository"
 	logRepository "github.com/Arturyus92/auth/internal/repository/log"
+	permRepository "github.com/Arturyus92/auth/internal/repository/permission"
 	userRepository "github.com/Arturyus92/auth/internal/repository/user"
 	"github.com/Arturyus92/auth/internal/service"
 	accessService "github.com/Arturyus92/auth/internal/service/access"
@@ -32,6 +33,7 @@ type serviceProvider struct {
 	txManager      db.TxManager
 	userRepository repository.UserRepository
 	logRepository  repository.LogRepository
+	permRepository repository.PermRepository
 
 	userService   service.UserService
 	authService   service.AuthService
@@ -149,6 +151,15 @@ func (s *serviceProvider) LogRepository(ctx context.Context) repository.LogRepos
 	return s.logRepository
 }
 
+// PermRepository - ...
+func (s *serviceProvider) PermRepository(ctx context.Context) repository.PermRepository {
+	if s.permRepository == nil {
+		s.permRepository = permRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.permRepository
+}
+
 // UserService - ...
 func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
 	if s.userService == nil {
@@ -165,7 +176,9 @@ func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
 // AccessService - ...
 func (s *serviceProvider) AccessService(ctx context.Context) service.AccessService {
 	if s.accessService == nil {
-		s.accessService = accessService.NewService()
+		s.accessService = accessService.NewService(
+			s.PermRepository(ctx),
+		)
 	}
 
 	return s.accessService

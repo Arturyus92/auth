@@ -20,7 +20,7 @@ func (s *service) GetRefreshToken(ctx context.Context, oldRefreshToken string) (
 	refreshToken, err := utils.GenerateToken(model.UserClaims{
 		Username: claims.Username,
 		// Это пример, в реальности роль должна браться из базы или кэша
-		Role: "admin",
+		Role: claims.Role,
 	},
 		[]byte(refreshTokenSecretKey),
 		refreshTokenExpiration,

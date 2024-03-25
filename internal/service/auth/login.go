@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/Arturyus92/auth/internal/model"
 	"github.com/Arturyus92/auth/internal/utils"
@@ -18,8 +17,6 @@ func (s *service) Login(ctx context.Context, login *model.Login) (string, error)
 		return "", err
 	}
 
-	log.Printf("\n!!!user.Password: %v\n", user.Password)
-	log.Printf("\n!!!login.Password: %v\n", login.Password)
 	// Сверяем хэши пароля
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password))
 	if err != nil {
@@ -29,7 +26,7 @@ func (s *service) Login(ctx context.Context, login *model.Login) (string, error)
 	refreshToken, err := utils.GenerateToken(model.UserClaims{
 		Username: user.Name,
 		// Это пример, в реальности роль должна браться из базы или кэша
-		Role: "admin",
+		Role: user.Role,
 	},
 		[]byte(refreshTokenSecretKey),
 		refreshTokenExpiration,

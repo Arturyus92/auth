@@ -9,8 +9,9 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var accessibleRoles map[string]string
+var accessibleRoles map[string]int32
 
+// Check - ...
 func (s *service) Check(ctx context.Context, address string) error {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -51,15 +52,23 @@ func (s *service) Check(ctx context.Context, address string) error {
 }
 
 // Возвращает мапу с адресом эндпоинта и ролью, которая имеет доступ к нему
-func (s *service) accessibleRoles(ctx context.Context) (map[string]string, error) {
+func (s *service) accessibleRoles(ctx context.Context) (map[string]int32, error) {
 	if accessibleRoles == nil {
-		accessibleRoles = make(map[string]string)
+		accessibleRoles = make(map[string]int32)
 
+		permissions, err := s.permRepository.GetPermission(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, perm := range permissions {
+			accessibleRoles[perm.Permission] = perm.Role
+		}
 		// Лезем в базу за данными о доступных ролях для каждого эндпоинта
 		// Можно кэшировать данные, чтобы не лезть в базу каждый раз
 
 		// Например, для эндпоинта /auth_v1.AuthV1/Get доступна только роль admin
-		accessibleRoles[PATH] = "admin"
+		//accessibleRoles[PATH] = "admin"
 	}
 
 	return accessibleRoles, nil
