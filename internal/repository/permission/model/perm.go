@@ -1,6 +1,6 @@
 package model
 
-// Permission ...
+// PermissionRepo ...
 type PermissionRepo struct {
 	Permission string
 	Role       int32
