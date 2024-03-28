@@ -4,13 +4,19 @@ import (
 	"context"
 	"log"
 
+	"github.com/Arturyus92/auth/internal/api/access"
+	"github.com/Arturyus92/auth/internal/api/auth"
 	"github.com/Arturyus92/auth/internal/api/user"
 	"github.com/Arturyus92/auth/internal/config"
 	"github.com/Arturyus92/auth/internal/config/env"
 	"github.com/Arturyus92/auth/internal/repository"
 	logRepository "github.com/Arturyus92/auth/internal/repository/log"
+	permRepository "github.com/Arturyus92/auth/internal/repository/permission"
+	secretRepository "github.com/Arturyus92/auth/internal/repository/secret"
 	userRepository "github.com/Arturyus92/auth/internal/repository/user"
 	"github.com/Arturyus92/auth/internal/service"
+	accessService "github.com/Arturyus92/auth/internal/service/access"
+	authService "github.com/Arturyus92/auth/internal/service/auth"
 	userService "github.com/Arturyus92/auth/internal/service/user"
 	"github.com/Arturyus92/platform_common/pkg/closer"
 	"github.com/Arturyus92/platform_common/pkg/db"
@@ -24,13 +30,20 @@ type serviceProvider struct {
 	httpConfig    config.HTTPConfig
 	swaggerConfig config.SwaggerConfig
 
-	dbClient       db.Client
-	txManager      db.TxManager
-	userRepository repository.UserRepository
-	logRepository  repository.LogRepository
-	userService    service.UserService
+	dbClient         db.Client
+	txManager        db.TxManager
+	userRepository   repository.UserRepository
+	logRepository    repository.LogRepository
+	permRepository   repository.PermRepository
+	secretRepository repository.SecretRepository
 
-	userImpl *user.Implementation
+	userService   service.UserService
+	authService   service.AuthService
+	accessService service.AccessService
+
+	userImpl   *user.Implementation
+	authImpl   *auth.Implementation
+	accessImpl *access.Implementation
 }
 
 func newServiceProvider() *serviceProvider {
@@ -140,6 +153,24 @@ func (s *serviceProvider) LogRepository(ctx context.Context) repository.LogRepos
 	return s.logRepository
 }
 
+// PermRepository - ...
+func (s *serviceProvider) PermRepository(ctx context.Context) repository.PermRepository {
+	if s.permRepository == nil {
+		s.permRepository = permRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.permRepository
+}
+
+// SecretRepository - ...
+func (s *serviceProvider) SecretRepository(ctx context.Context) repository.SecretRepository {
+	if s.secretRepository == nil {
+		s.secretRepository = secretRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.secretRepository
+}
+
 // UserService - ...
 func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
 	if s.userService == nil {
@@ -153,6 +184,29 @@ func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
 	return s.userService
 }
 
+// AccessService - ...
+func (s *serviceProvider) AccessService(ctx context.Context) service.AccessService {
+	if s.accessService == nil {
+		s.accessService = accessService.NewService(
+			s.PermRepository(ctx),
+			s.SecretRepository(ctx),
+		)
+	}
+
+	return s.accessService
+}
+
+// AuthService - ...
+func (s *serviceProvider) AuthService(ctx context.Context) service.AuthService {
+	if s.authService == nil {
+		s.authService = authService.NewService(s.UserRepository(ctx),
+			s.SecretRepository(ctx),
+		)
+	}
+
+	return s.authService
+}
+
 // UserImpl - ...
 func (s *serviceProvider) UserImpl(ctx context.Context) *user.Implementation {
 	if s.userImpl == nil {
@@ -160,4 +214,22 @@ func (s *serviceProvider) UserImpl(ctx context.Context) *user.Implementation {
 	}
 
 	return s.userImpl
+}
+
+// AuthImpl - ...
+func (s *serviceProvider) AuthImpl(ctx context.Context) *auth.Implementation {
+	if s.authImpl == nil {
+		s.authImpl = auth.NewImplementation(s.AuthService(ctx))
+	}
+
+	return s.authImpl
+}
+
+// AccessImpl - ...
+func (s *serviceProvider) AccessImpl(ctx context.Context) *access.Implementation {
+	if s.accessImpl == nil {
+		s.accessImpl = access.NewImplementation(s.AccessService(ctx))
+	}
+
+	return s.accessImpl
 }

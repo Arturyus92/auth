@@ -6,6 +6,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/Arturyus92/auth/internal/model"
+	auth "github.com/Arturyus92/auth/pkg/auth_v1"
 	desc "github.com/Arturyus92/auth/pkg/user_v1"
 )
 
@@ -57,5 +58,13 @@ func ToUserUpdateFromDesc(user *desc.UserToUpdate) *model.UserToUpdate {
 		Name:  name,
 		Email: email,
 		Role:  int32(user.Role),
+	}
+}
+
+// ToServiceLogin - ...
+func ToServiceLogin(login *auth.LoginRequest) *model.Login {
+	return &model.Login{
+		Username: login.Username,
+		Password: login.Password,
 	}
 }
