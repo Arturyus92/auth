@@ -9,6 +9,7 @@ import (
 	"github.com/Arturyus92/auth/internal/model"
 )
 
+// GenerateToken ...
 func GenerateToken(info model.UserClaims, secretKey []byte, duration time.Duration) (string, error) {
 	claims := model.UserClaims{
 		StandardClaims: jwt.StandardClaims{
@@ -23,6 +24,7 @@ func GenerateToken(info model.UserClaims, secretKey []byte, duration time.Durati
 	return token.SignedString(secretKey)
 }
 
+// VerifyToken ...
 func VerifyToken(tokenStr string, secretKey []byte) (*model.UserClaims, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenStr,

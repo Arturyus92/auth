@@ -61,6 +61,7 @@ func ToUserUpdateFromDesc(user *desc.UserToUpdate) *model.UserToUpdate {
 	}
 }
 
+// ToServiceLogin - ...
 func ToServiceLogin(login *auth.LoginRequest) *model.Login {
 	return &model.Login{
 		Username: login.Username,

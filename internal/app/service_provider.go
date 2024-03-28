@@ -12,6 +12,7 @@ import (
 	"github.com/Arturyus92/auth/internal/repository"
 	logRepository "github.com/Arturyus92/auth/internal/repository/log"
 	permRepository "github.com/Arturyus92/auth/internal/repository/permission"
+	secretRepository "github.com/Arturyus92/auth/internal/repository/secret"
 	userRepository "github.com/Arturyus92/auth/internal/repository/user"
 	"github.com/Arturyus92/auth/internal/service"
 	accessService "github.com/Arturyus92/auth/internal/service/access"
@@ -29,11 +30,12 @@ type serviceProvider struct {
 	httpConfig    config.HTTPConfig
 	swaggerConfig config.SwaggerConfig
 
-	dbClient       db.Client
-	txManager      db.TxManager
-	userRepository repository.UserRepository
-	logRepository  repository.LogRepository
-	permRepository repository.PermRepository
+	dbClient         db.Client
+	txManager        db.TxManager
+	userRepository   repository.UserRepository
+	logRepository    repository.LogRepository
+	permRepository   repository.PermRepository
+	secretRepository repository.SecretRepository
 
 	userService   service.UserService
 	authService   service.AuthService
@@ -160,6 +162,15 @@ func (s *serviceProvider) PermRepository(ctx context.Context) repository.PermRep
 	return s.permRepository
 }
 
+// SecretRepository - ...
+func (s *serviceProvider) SecretRepository(ctx context.Context) repository.SecretRepository {
+	if s.secretRepository == nil {
+		s.secretRepository = secretRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.secretRepository
+}
+
 // UserService - ...
 func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
 	if s.userService == nil {
@@ -178,6 +189,7 @@ func (s *serviceProvider) AccessService(ctx context.Context) service.AccessServi
 	if s.accessService == nil {
 		s.accessService = accessService.NewService(
 			s.PermRepository(ctx),
+			s.SecretRepository(ctx),
 		)
 	}
 
@@ -187,7 +199,9 @@ func (s *serviceProvider) AccessService(ctx context.Context) service.AccessServi
 // AuthService - ...
 func (s *serviceProvider) AuthService(ctx context.Context) service.AuthService {
 	if s.authService == nil {
-		s.authService = authService.NewService(s.UserRepository(ctx))
+		s.authService = authService.NewService(s.UserRepository(ctx),
+			s.SecretRepository(ctx),
+		)
 	}
 
 	return s.authService

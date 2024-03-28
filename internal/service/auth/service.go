@@ -3,14 +3,13 @@ package auth
 import (
 	"time"
 
-	_ "github.com/Arturyus92/auth/internal/config/env"
 	"github.com/Arturyus92/auth/internal/repository"
 	def "github.com/Arturyus92/auth/internal/service"
 )
 
 const (
-	refreshTokenSecretKey = "W4/X+LLjehdxptt4YgGFCvMpq5ewptpZZYRHY6A72g0="
-	accessTokenSecretKey  = "VqvguGiffXILza1f44TWXowDT4zwf03dtXmqWW4SYyE="
+	refreshTokenName = "refresh"
+	accessTokenName  = "access"
 
 	refreshTokenExpiration = 60 * time.Minute
 	accessTokenExpiration  = 2 * time.Minute
@@ -19,12 +18,14 @@ const (
 var _ def.AuthService = (*service)(nil)
 
 type service struct {
-	userRepository repository.UserRepository
+	userRepository   repository.UserRepository
+	secretRepository repository.SecretRepository
 }
 
 // NewService - ...
-func NewService(userRepository repository.UserRepository) *service {
+func NewService(userRepository repository.UserRepository, secretRepository repository.SecretRepository) *service {
 	return &service{
-		userRepository: userRepository,
+		userRepository:   userRepository,
+		secretRepository: secretRepository,
 	}
 }

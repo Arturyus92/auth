@@ -24,3 +24,8 @@ type LogRepository interface {
 type PermRepository interface {
 	GetPermission(ctx context.Context) ([]model.Permission, error)
 }
+
+// SecretRepository - ...
+type SecretRepository interface {
+	GetKeyTokens(ctx context.Context, tokenName string) (string, error)
+}
