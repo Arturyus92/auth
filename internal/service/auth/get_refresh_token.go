@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Arturyus92/auth/internal/model"
 	"github.com/Arturyus92/auth/internal/utils"
@@ -9,18 +10,21 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// GetRefreshToken-...
 func (s *service) GetRefreshToken(ctx context.Context, oldRefreshToken string) (string, error) {
+	refreshTokenSecretKey, err := s.secretRepository.GetKeyTokens(ctx, refreshTokenName)
+	if err != nil {
+		return "", errors.New("key receipt error")
+	}
+
 	claims, err := utils.VerifyToken(oldRefreshToken, []byte(refreshTokenSecretKey))
 	if err != nil {
 		return "", status.Errorf(codes.Aborted, "invalid refresh token")
 	}
 
-	// Можем слазать в базу или в кэш за доп данными пользователя
-
 	refreshToken, err := utils.GenerateToken(model.UserClaims{
 		Username: claims.Username,
-		// Это пример, в реальности роль должна браться из базы или кэша
-		Role: "admin",
+		Role:     claims.Role,
 	},
 		[]byte(refreshTokenSecretKey),
 		refreshTokenExpiration,

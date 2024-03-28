@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 
-	_ "github.com/Arturyus92/auth/internal/converter"
 	desc "github.com/Arturyus92/auth/pkg/auth_v1"
 )
 

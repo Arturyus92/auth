@@ -19,3 +19,13 @@ type UserRepository interface {
 type LogRepository interface {
 	CreateLog(ctx context.Context, log *model.Log) error
 }
+
+// PermRepository - ...
+type PermRepository interface {
+	GetPermission(ctx context.Context) ([]model.Permission, error)
+}
+
+// SecretRepository - ...
+type SecretRepository interface {
+	GetKeyTokens(ctx context.Context, tokenName string) (string, error)
+}

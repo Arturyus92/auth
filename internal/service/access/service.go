@@ -1,22 +1,26 @@
 package access
 
 import (
-	_ "github.com/Arturyus92/auth/internal/config/env"
+	"github.com/Arturyus92/auth/internal/repository"
 	def "github.com/Arturyus92/auth/internal/service"
 )
 
 const (
-	authPrefix           = "Bearer "
-	accessTokenSecretKey = "VqvguGiffXILza1f44TWXowDT4zwf03dtXmqWW4SYyE="
-	PATH                 = "/auth_v1.AuthV1/Get"
+	authPrefix      = "Bearer "
+	accessTokenName = "access"
 )
 
 var _ def.AccessService = (*service)(nil)
 
 type service struct {
+	permRepository   repository.PermRepository
+	secretRepository repository.SecretRepository
 }
 
 // NewService - ...
-func NewService() *service {
-	return &service{}
+func NewService(permRepository repository.PermRepository, secretRepository repository.SecretRepository) *service {
+	return &service{
+		permRepository:   permRepository,
+		secretRepository: secretRepository,
+	}
 }
