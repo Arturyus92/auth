@@ -22,7 +22,7 @@ type LogRepository interface {
 
 // PermRepository - ...
 type PermRepository interface {
-	GetPermission(ctx context.Context) ([]model.Permission, error)
+	GetPermission(ctx context.Context) ([]*model.Permission, error)
 }
 
 // SecretRepository - ...

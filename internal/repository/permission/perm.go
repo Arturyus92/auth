@@ -7,6 +7,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/Arturyus92/auth/internal/model"
+	"github.com/Arturyus92/auth/internal/repository/permission/converter"
+	modelRepo "github.com/Arturyus92/auth/internal/repository/permission/model"
 	"github.com/Arturyus92/platform_common/pkg/db"
 )
 
@@ -29,7 +31,7 @@ func NewRepository(db db.Client) *Repo {
 }
 
 // GetPermission - ...
-func (r *Repo) GetPermission(ctx context.Context) ([]model.Permission, error) {
+func (r *Repo) GetPermission(ctx context.Context) ([]*model.Permission, error) {
 	builderSelectOne := sq.Select(colRole, colPath).
 		From(tableName).
 		PlaceholderFormat(sq.Dollar)
@@ -51,13 +53,14 @@ func (r *Repo) GetPermission(ctx context.Context) ([]model.Permission, error) {
 		}
 		defer rows.Close()*/
 
-	var pathPermissions []model.Permission
+	var pathPermissions []*modelRepo.PermissionRepo
 	err = r.db.DB().ScanAllContext(ctx, &pathPermissions, q, args...)
+	log.Printf("\n\tpathPermissions: %v\n", pathPermissions)
 	if err != nil {
 		log.Printf("failed to ScanAllContext: %v", err)
 		return nil, err
 	}
-	log.Printf("\n\tpathPermissions: %v\n", pathPermissions)
+
 	/*
 		for rows.Next() {
 			var pathPermission model.Permission
@@ -71,5 +74,5 @@ func (r *Repo) GetPermission(ctx context.Context) ([]model.Permission, error) {
 			pathPermissions = append(pathPermissions, pathPermission)
 		}*/
 
-	return pathPermissions, nil
+	return converter.ToPermFromRepo(pathPermissions), nil
 }
