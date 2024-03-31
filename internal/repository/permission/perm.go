@@ -30,7 +30,6 @@ func NewRepository(db db.Client) *Repo {
 
 // GetPermission - ...
 func (r *Repo) GetPermission(ctx context.Context) ([]model.Permission, error) {
-
 	builderSelectOne := sq.Select(colRole, colPath).
 		From(tableName).
 		PlaceholderFormat(sq.Dollar)
@@ -45,26 +44,32 @@ func (r *Repo) GetPermission(ctx context.Context) ([]model.Permission, error) {
 		Name:     "perm_repository.GetPermission",
 		QueryRaw: query,
 	}
-
-	rows, err := r.db.DB().QueryContext(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var pathPermissions []model.Permission
-
-	for rows.Next() {
-		var pathPermission model.Permission
-
-		err := rows.Scan(&pathPermission.Role, &pathPermission.Permission)
+	/*
+		rows, err := r.db.DB().QueryContext(ctx, q, args...)
 		if err != nil {
-			log.Printf("failed to Scan: %v", err)
 			return nil, err
 		}
+		defer rows.Close()*/
 
-		pathPermissions = append(pathPermissions, pathPermission)
+	var pathPermissions []model.Permission
+	err = r.db.DB().ScanAllContext(ctx, &pathPermissions, q, args...)
+	if err != nil {
+		log.Printf("failed to ScanAllContext: %v", err)
+		return nil, err
 	}
+	log.Printf("\n\tpathPermissions: %v\n", pathPermissions)
+	/*
+		for rows.Next() {
+			var pathPermission model.Permission
+
+			err := rows.Scan(&pathPermission.Role, &pathPermission.Permission)
+			if err != nil {
+				log.Printf("failed to Scan: %v", err)
+				return nil, err
+			}
+
+			pathPermissions = append(pathPermissions, pathPermission)
+		}*/
 
 	return pathPermissions, nil
 }

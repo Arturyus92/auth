@@ -29,7 +29,6 @@ func NewRepository(db db.Client) *Repo {
 
 // GetKeyTokens - ...
 func (r *Repo) GetKeyTokens(ctx context.Context, tokenName string) (string, error) {
-
 	builderSelectOne := sq.Select(colValue).
 		From(tableName).
 		PlaceholderFormat(sq.Dollar).
