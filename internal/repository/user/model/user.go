@@ -15,3 +15,8 @@ type User struct {
 	CreatedAt time.Time    `db:"created_at"`
 	UpdatedAt sql.NullTime `db:"updated_at"`
 }
+
+type UserFilter struct {
+	ID   *int64
+	Name *string
+}

@@ -7,12 +7,12 @@ import (
 
 // ToPermFromRepo - ...
 func ToPermFromRepo(pathPermissions []*modelRepo.PermissionRepo) []*model.Permission {
-	var res []*model.Permission
+	var permissions []*model.Permission
 	for _, perm := range pathPermissions {
-		res = append(res, &model.Permission{
+		permissions = append(permissions, &model.Permission{
 			Permission: perm.Permission,
 			Role:       perm.Role,
 		})
 	}
-	return res
+	return permissions
 }

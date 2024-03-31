@@ -36,14 +36,20 @@ func NewRepository(db db.Client) *Repo {
 	return &Repo{db: db}
 }
 
-// GetLogin - ...
-func (r *Repo) GetLogin(ctx context.Context, username string) (*model.User, error) {
+// Get - ...
+func (r *Repo) Get(ctx context.Context, filter modelRepo.UserFilter) (*model.User, error) {
 	// Делаем запрос на получение записи по username из таблицы auth
-	builderSelectOne := sq.Select(colName, colRole, colPassword).
+	builderSelectOne := sq.Select(colUserID, colName, colEmail, colRole, colCreatedAt, colUpdatedAt, colPassword).
 		From(tableName).
-		PlaceholderFormat(sq.Dollar).
-		Where(sq.Eq{colName: username}).
-		Limit(1)
+		PlaceholderFormat(sq.Dollar)
+
+	if filter.ID != nil {
+		builderSelectOne = builderSelectOne.Where(sq.Eq{colUserID: filter.ID}).Limit(1)
+	}
+
+	if filter.Name != nil {
+		builderSelectOne = builderSelectOne.Where(sq.Eq{colName: filter.Name}).Limit(1)
+	}
 
 	query, args, err := builderSelectOne.ToSql()
 	if err != nil {
@@ -52,7 +58,7 @@ func (r *Repo) GetLogin(ctx context.Context, username string) (*model.User, erro
 	}
 
 	q := db.Query{
-		Name:     "user_repository.GetLogin",
+		Name:     "user_repository.Get",
 		QueryRaw: query,
 	}
 
@@ -65,6 +71,7 @@ func (r *Repo) GetLogin(ctx context.Context, username string) (*model.User, erro
 	return converter.ToUserFromRepo(&getUser), nil
 }
 
+/*
 // Get - ...
 func (r *Repo) Get(ctx context.Context, id int64) (*model.User, error) {
 	// Делаем запрос на получение записи из таблицы auth
@@ -93,7 +100,7 @@ func (r *Repo) Get(ctx context.Context, id int64) (*model.User, error) {
 	}
 	return converter.ToUserFromRepo(&getUser), nil
 }
-
+*/
 // Create - ...
 func (r *Repo) Create(ctx context.Context, user *model.UserToCreate) (int64, error) {
 	//Хэш пароля по DefaultCost

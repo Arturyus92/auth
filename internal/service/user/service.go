@@ -23,6 +23,7 @@ func NewService(userRepository repository.UserRepository, txManager db.TxManager
 	}
 }
 
+/*
 // NewMockService - ...
 func NewMockService(deps ...interface{}) def.UserService {
 	srv := service{}
@@ -35,4 +36,4 @@ func NewMockService(deps ...interface{}) def.UserService {
 	}
 
 	return srv.userRepository
-}
+}*/

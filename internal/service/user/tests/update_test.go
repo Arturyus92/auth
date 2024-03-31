@@ -8,6 +8,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/gojuno/minimock/v3"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/stretchr/testify/require"
 
@@ -15,11 +16,16 @@ import (
 	"github.com/Arturyus92/auth/internal/repository"
 	repoMocks "github.com/Arturyus92/auth/internal/repository/mocks"
 	"github.com/Arturyus92/auth/internal/service/user"
+	"github.com/Arturyus92/platform_common/pkg/db"
+	dbMocks "github.com/Arturyus92/platform_common/pkg/db/mocks"
+	"github.com/Arturyus92/platform_common/pkg/db/transaction"
 )
 
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 	type userRepositoryMockFunc func(mc *minimock.Controller) repository.UserRepository
+	type logRepositoryMockFunc func(mc *minimock.Controller) repository.LogRepository
+	type transactorMockFunc func(mc *minimock.Controller) db.Transactor
 
 	type args struct {
 		ctx context.Context
@@ -36,6 +42,12 @@ func TestUpdate(t *testing.T) {
 		role  int32 = 1
 
 		repoErr = fmt.Errorf("repo error")
+
+		reqLog = &model.Log{
+			Text: fmt.Sprintf("user id: %d", id),
+		}
+
+		opts = pgx.TxOptions{IsoLevel: pgx.ReadCommitted}
 
 		req = &model.UserToUpdate{
 			ID: id,
@@ -57,6 +69,8 @@ func TestUpdate(t *testing.T) {
 		want               int64
 		err                error
 		userRepositoryMock userRepositoryMockFunc
+		logRepositoryMock  logRepositoryMockFunc
+		transactorMock     transactorMockFunc
 	}{
 		{
 			name: "success case",
@@ -69,6 +83,18 @@ func TestUpdate(t *testing.T) {
 			userRepositoryMock: func(mc *minimock.Controller) repository.UserRepository {
 				mock := repoMocks.NewUserRepositoryMock(mc)
 				mock.UpdateMock.Expect(ctx, req).Return(nil)
+				return mock
+			},
+			logRepositoryMock: func(mc *minimock.Controller) repository.LogRepository {
+				mock := repoMocks.NewLogRepositoryMock(mc)
+				mock.CreateLogMock.Expect(ctx, reqLog).Return(nil)
+				return mock
+			},
+			transactorMock: func(mc *minimock.Controller) db.Transactor {
+				mock := dbMocks.NewTransactorMock(mc)
+				txMock := dbMocks.NewTxMock(mc)
+				mock.BeginTxMock.Expect(minimock.AnyContext, opts).Return(txMock, nil)
+				txMock.CommitMock.Expect(minimock.AnyContext).Return(nil)
 				return mock
 			},
 		},
@@ -85,6 +111,17 @@ func TestUpdate(t *testing.T) {
 				mock.UpdateMock.Expect(ctx, req).Return(repoErr)
 				return mock
 			},
+			logRepositoryMock: func(mc *minimock.Controller) repository.LogRepository {
+				mock := repoMocks.NewLogRepositoryMock(mc)
+				return mock
+			},
+			transactorMock: func(mc *minimock.Controller) db.Transactor {
+				mock := dbMocks.NewTransactorMock(mc)
+				txMock := dbMocks.NewTxMock(mc)
+				mock.BeginTxMock.Expect(minimock.AnyContext, opts).Return(txMock, nil)
+				txMock.RollbackMock.Expect(minimock.AnyContext).Return(nil)
+				return mock
+			},
 		},
 	}
 
@@ -94,7 +131,9 @@ func TestUpdate(t *testing.T) {
 			t.Parallel()
 
 			userRepoMock := tt.userRepositoryMock(mc)
-			service := user.NewMockService(userRepoMock)
+			logRepoMock := tt.logRepositoryMock(mc)
+			txManagerMock := transaction.NewTransactionManager(tt.transactorMock(mc))
+			service := user.NewService(userRepoMock, txManagerMock, logRepoMock)
 
 			err := service.Update(tt.args.ctx, tt.args.req)
 			require.Equal(t, tt.err, err)

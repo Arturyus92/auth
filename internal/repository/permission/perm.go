@@ -46,33 +46,13 @@ func (r *Repo) GetPermission(ctx context.Context) ([]*model.Permission, error) {
 		Name:     "perm_repository.GetPermission",
 		QueryRaw: query,
 	}
-	/*
-		rows, err := r.db.DB().QueryContext(ctx, q, args...)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()*/
 
 	var pathPermissions []*modelRepo.PermissionRepo
 	err = r.db.DB().ScanAllContext(ctx, &pathPermissions, q, args...)
-	log.Printf("\n\tpathPermissions: %v\n", pathPermissions)
 	if err != nil {
 		log.Printf("failed to ScanAllContext: %v", err)
 		return nil, err
 	}
-
-	/*
-		for rows.Next() {
-			var pathPermission model.Permission
-
-			err := rows.Scan(&pathPermission.Role, &pathPermission.Permission)
-			if err != nil {
-				log.Printf("failed to Scan: %v", err)
-				return nil, err
-			}
-
-			pathPermissions = append(pathPermissions, pathPermission)
-		}*/
 
 	return converter.ToPermFromRepo(pathPermissions), nil
 }
