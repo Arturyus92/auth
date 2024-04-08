@@ -44,11 +44,11 @@ func (r *Repo) Get(ctx context.Context, filter modelRepo.UserFilter) (*model.Use
 		PlaceholderFormat(sq.Dollar)
 
 	if filter.ID != nil {
-		builderSelectOne = builderSelectOne.Where(sq.Eq{colUserID: filter.ID}).Limit(1)
+		builderSelectOne = builderSelectOne.Where(sq.Eq{colUserID: filter.ID})
 	}
 
 	if filter.Name != nil {
-		builderSelectOne = builderSelectOne.Where(sq.Eq{colName: filter.Name}).Limit(1)
+		builderSelectOne = builderSelectOne.Where(sq.Eq{colName: filter.Name})
 	}
 
 	query, args, err := builderSelectOne.ToSql()
@@ -71,36 +71,6 @@ func (r *Repo) Get(ctx context.Context, filter modelRepo.UserFilter) (*model.Use
 	return converter.ToUserFromRepo(&getUser), nil
 }
 
-/*
-// Get - ...
-func (r *Repo) Get(ctx context.Context, id int64) (*model.User, error) {
-	// Делаем запрос на получение записи из таблицы auth
-	builderSelectOne := sq.Select(colUserID, colName, colEmail, colRole, colCreatedAt, colUpdatedAt).
-		From(tableName).
-		PlaceholderFormat(sq.Dollar).
-		Where(sq.Eq{colUserID: id}).
-		Limit(1)
-
-	query, args, err := builderSelectOne.ToSql()
-	if err != nil {
-		log.Printf("failed to build query: %v", err)
-		return nil, err
-	}
-
-	q := db.Query{
-		Name:     "user_repository.Get",
-		QueryRaw: query,
-	}
-
-	var getUser modelRepo.User
-	err = r.db.DB().ScanOneContext(ctx, &getUser, q, args...)
-	if err != nil {
-		log.Printf("failed to ScanOneContext: %v", err)
-		return nil, err
-	}
-	return converter.ToUserFromRepo(&getUser), nil
-}
-*/
 // Create - ...
 func (r *Repo) Create(ctx context.Context, user *model.UserToCreate) (int64, error) {
 	//Хэш пароля по DefaultCost

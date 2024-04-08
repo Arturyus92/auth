@@ -6,26 +6,23 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v6"
-	"github.com/gojuno/minimock/v3"
-	"github.com/jackc/pgx/v5"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/Arturyus92/auth/internal/model"
 	"github.com/Arturyus92/auth/internal/repository"
-	repoMocks "github.com/Arturyus92/auth/internal/repository/mocks"
-	"github.com/Arturyus92/auth/internal/service/user"
+	userService "github.com/Arturyus92/auth/internal/service/user"
 	"github.com/Arturyus92/platform_common/pkg/db"
 	dbMocks "github.com/Arturyus92/platform_common/pkg/db/mocks"
+	"github.com/Arturyus92/platform_common/pkg/db/pg"
 	"github.com/Arturyus92/platform_common/pkg/db/transaction"
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/jackc/pgx/v4"
+	"github.com/pkg/errors"
 )
 
-func TestUpdate(t *testing.T) {
-	t.Parallel()
-	type userRepositoryMockFunc func(mc *minimock.Controller) repository.UserRepository
-	type logRepositoryMockFunc func(mc *minimock.Controller) repository.LogRepository
-	type transactorMockFunc func(mc *minimock.Controller) db.Transactor
+func (s *TestSuite) TestUpdate() {
+	s.T().Parallel()
+	type userRepositoryMockFunc func() repository.UserRepository
+	type logRepositoryMockFunc func() repository.LogRepository
+	type transactorMockFunc func() db.Transactor
 
 	type args struct {
 		ctx context.Context
@@ -33,23 +30,19 @@ func TestUpdate(t *testing.T) {
 	}
 
 	var (
-		ctx = context.Background()
-		mc  = minimock.NewController(t)
+		txOpts = pgx.TxOptions{IsoLevel: pgx.ReadCommitted}
+		txM    dbMocks.TxMock
+		ctx    = context.Background()
 
-		id          = gofakeit.Int64()
-		name        = gofakeit.Animal()
-		email       = gofakeit.Email()
-		role  int32 = 1
+		id       = gofakeit.Int64()
+		userRole = gofakeit.Int32()
+		name     = gofakeit.Name()
+		email    = gofakeit.Email()
 
-		repoErr = fmt.Errorf("repo error")
+		repoErr = errors.New("repo error")
+		txError = errors.Wrap(repoErr, "failed executing code inside transaction")
 
-		reqLog = &model.Log{
-			Text: fmt.Sprintf("user id: %d", id),
-		}
-
-		opts = pgx.TxOptions{IsoLevel: pgx.ReadCommitted}
-
-		req = &model.UserToUpdate{
+		userToUpdate = &model.UserToUpdate{
 			ID: id,
 			Name: sql.NullString{
 				String: name,
@@ -59,14 +52,18 @@ func TestUpdate(t *testing.T) {
 				String: email,
 				Valid:  true,
 			},
-			Role: int32(role),
+			Role: userRole,
+		}
+
+		logInfo = &model.Log{
+			Text: fmt.Sprintf("User updated: %d", id),
 		}
 	)
 
 	tests := []struct {
 		name               string
 		args               args
-		want               int64
+		want               error
 		err                error
 		userRepositoryMock userRepositoryMockFunc
 		logRepositoryMock  logRepositoryMockFunc
@@ -76,67 +73,56 @@ func TestUpdate(t *testing.T) {
 			name: "success case",
 			args: args{
 				ctx: ctx,
-				req: req,
+				req: userToUpdate,
 			},
-			want: id,
+			want: nil,
 			err:  nil,
-			userRepositoryMock: func(mc *minimock.Controller) repository.UserRepository {
-				mock := repoMocks.NewUserRepositoryMock(mc)
-				mock.UpdateMock.Expect(ctx, req).Return(nil)
-				return mock
+			userRepositoryMock: func() repository.UserRepository {
+				return s.userRepositoryMock.UpdateMock.Expect(pg.MakeContextTx(ctx, &txM), userToUpdate).Return(nil)
 			},
-			logRepositoryMock: func(mc *minimock.Controller) repository.LogRepository {
-				mock := repoMocks.NewLogRepositoryMock(mc)
-				mock.CreateLogMock.Expect(ctx, reqLog).Return(nil)
-				return mock
+			logRepositoryMock: func() repository.LogRepository {
+				return s.logRepositoryMock.CreateLogMock.Expect(pg.MakeContextTx(ctx, &txM), logInfo).Return(nil)
 			},
-			transactorMock: func(mc *minimock.Controller) db.Transactor {
-				mock := dbMocks.NewTransactorMock(mc)
-				txMock := dbMocks.NewTxMock(mc)
-				mock.BeginTxMock.Expect(minimock.AnyContext, opts).Return(txMock, nil)
-				txMock.CommitMock.Expect(minimock.AnyContext).Return(nil)
-				return mock
+			transactorMock: func() db.Transactor {
+				return s.transactorMock.BeginTxMock.Expect(ctx, txOpts).Return(&txM, nil)
 			},
 		},
 		{
 			name: "service error case",
 			args: args{
 				ctx: ctx,
-				req: req,
+				req: userToUpdate,
 			},
-			want: 0,
-			err:  repoErr,
-			userRepositoryMock: func(mc *minimock.Controller) repository.UserRepository {
-				mock := repoMocks.NewUserRepositoryMock(mc)
-				mock.UpdateMock.Expect(ctx, req).Return(repoErr)
-				return mock
+			want: nil,
+			err:  txError,
+			userRepositoryMock: func() repository.UserRepository {
+				return s.userRepositoryMock.UpdateMock.Expect(pg.MakeContextTx(ctx, &txM), userToUpdate).Return(repoErr)
 			},
-			logRepositoryMock: func(mc *minimock.Controller) repository.LogRepository {
-				mock := repoMocks.NewLogRepositoryMock(mc)
-				return mock
+			logRepositoryMock: func() repository.LogRepository {
+				return s.logRepositoryMock
 			},
-			transactorMock: func(mc *minimock.Controller) db.Transactor {
-				mock := dbMocks.NewTransactorMock(mc)
-				txMock := dbMocks.NewTxMock(mc)
-				mock.BeginTxMock.Expect(minimock.AnyContext, opts).Return(txMock, nil)
-				txMock.RollbackMock.Expect(minimock.AnyContext).Return(nil)
-				return mock
+			transactorMock: func() db.Transactor {
+				return s.transactorMock.BeginTxMock.Expect(ctx, txOpts).Return(&txM, nil)
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+		s.T().Run(
+			tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			userRepoMock := tt.userRepositoryMock(mc)
-			logRepoMock := tt.logRepositoryMock(mc)
-			txManagerMock := transaction.NewTransactionManager(tt.transactorMock(mc))
-			service := user.NewService(userRepoMock, txManagerMock, logRepoMock)
+				userRepoMock := tt.userRepositoryMock()
+				logRepoMock := tt.logRepositoryMock()
+				txManagerMock := transaction.NewTransactionManager(tt.transactorMock())
+				service := userService.NewService(userRepoMock, txManagerMock, logRepoMock)
 
-			err := service.Update(tt.args.ctx, tt.args.req)
-			require.Equal(t, tt.err, err)
-		})
+				err := service.Update(tt.args.ctx, tt.args.req)
+				if err != nil {
+					s.Require().Equal(tt.err.Error(), err.Error())
+				}
+			},
+		)
 	}
 }
