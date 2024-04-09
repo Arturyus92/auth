@@ -2,6 +2,6 @@ package model
 
 // PermissionRepo ...
 type PermissionRepo struct {
-	Permission string
-	Role       int32
+	Permission string `db:"path"`
+	Role       int32  `db:"role"`
 }

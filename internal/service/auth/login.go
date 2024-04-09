@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/Arturyus92/auth/internal/model"
+	modelRepo "github.com/Arturyus92/auth/internal/repository/user/model"
 	"github.com/Arturyus92/auth/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -12,7 +13,7 @@ import (
 // Login-..
 func (s *service) Login(ctx context.Context, login *model.Login) (string, error) {
 	// Лезем в базу за данными пользователя
-	user, err := s.userRepository.GetLogin(ctx, login.Username)
+	user, err := s.userRepository.Get(ctx, modelRepo.UserFilter{Name: &login.Username})
 	if err != nil {
 		return "", err
 	}
