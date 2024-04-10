@@ -6,18 +6,23 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/gojuno/minimock/v3"
-	"github.com/stretchr/testify/require"
+	"github.com/jackc/pgx/v4"
+	"github.com/pkg/errors"
 
 	"github.com/Arturyus92/auth/internal/model"
 	"github.com/Arturyus92/auth/internal/repository"
-	repoMocks "github.com/Arturyus92/auth/internal/repository/mocks"
 	"github.com/Arturyus92/auth/internal/service/user"
+	"github.com/Arturyus92/platform_common/pkg/db"
+	dbMocks "github.com/Arturyus92/platform_common/pkg/db/mocks"
+	"github.com/Arturyus92/platform_common/pkg/db/pg"
+	"github.com/Arturyus92/platform_common/pkg/db/transaction"
 )
 
-func TestDelete(t *testing.T) {
-	t.Parallel()
-	type userRepositoryMockFunc func(mc *minimock.Controller) repository.UserRepository
+func (s *TestSuite) TestDelete() {
+	s.T().Parallel()
+	type userRepositoryMockFunc func() repository.UserRepository
+	type logRepositoryMockFunc func() repository.LogRepository
+	type transactorMockFunc func() db.Transactor
 
 	type args struct {
 		ctx context.Context
@@ -26,17 +31,26 @@ func TestDelete(t *testing.T) {
 
 	var (
 		ctx     = context.Background()
-		mc      = minimock.NewController(t)
 		id      = gofakeit.Int64()
 		repoErr = fmt.Errorf("repo error")
+		txError = errors.Wrap(repoErr, "failed executing code inside transaction")
+
+		txOpts = pgx.TxOptions{IsoLevel: pgx.ReadCommitted}
+		txM    dbMocks.TxMock
+
+		logInfo = &model.Log{
+			Text: fmt.Sprintf("User deleted: %d", id),
+		}
 	)
 
 	tests := []struct {
 		name               string
 		args               args
-		want               *model.User
+		want               error
 		err                error
 		userRepositoryMock userRepositoryMockFunc
+		logRepositoryMock  logRepositoryMockFunc
+		transactorMock     transactorMockFunc
 	}{
 		{
 			name: "success case",
@@ -46,10 +60,15 @@ func TestDelete(t *testing.T) {
 			},
 			want: nil,
 			err:  nil,
-			userRepositoryMock: func(mc *minimock.Controller) repository.UserRepository {
-				mock := repoMocks.NewUserRepositoryMock(mc)
-				mock.DeleteMock.Expect(ctx, id).Return(nil)
-				return mock
+			userRepositoryMock: func() repository.UserRepository {
+				return s.userRepositoryMock.DeleteMock.Expect(pg.MakeContextTx(ctx, &txM), id).Return(nil)
+
+			},
+			logRepositoryMock: func() repository.LogRepository {
+				return s.logRepositoryMock.CreateLogMock.Expect(pg.MakeContextTx(ctx, &txM), logInfo).Return(nil)
+			},
+			transactorMock: func() db.Transactor {
+				return s.transactorMock.BeginTxMock.Expect(ctx, txOpts).Return(&txM, nil)
 			},
 		},
 		{
@@ -59,25 +78,35 @@ func TestDelete(t *testing.T) {
 				req: id,
 			},
 			want: nil,
-			err:  repoErr,
-			userRepositoryMock: func(mc *minimock.Controller) repository.UserRepository {
-				mock := repoMocks.NewUserRepositoryMock(mc)
-				mock.DeleteMock.Expect(ctx, id).Return(repoErr)
-				return mock
+			err:  txError,
+			userRepositoryMock: func() repository.UserRepository {
+				return s.userRepositoryMock.DeleteMock.Expect(pg.MakeContextTx(ctx, &txM), id).Return(repoErr)
+			},
+			logRepositoryMock: func() repository.LogRepository {
+				return s.logRepositoryMock
+			},
+			transactorMock: func() db.Transactor {
+				return s.transactorMock.BeginTxMock.Expect(ctx, txOpts).Return(&txM, nil)
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+		s.T().Run(
+			tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			userRepoMock := tt.userRepositoryMock(mc)
-			service := user.NewMockService(userRepoMock)
+				userRepoMock := tt.userRepositoryMock()
+				logRepoMock := tt.logRepositoryMock()
+				txManagerMock := transaction.NewTransactionManager(tt.transactorMock())
+				service := user.NewService(userRepoMock, txManagerMock, logRepoMock)
 
-			err := service.Delete(tt.args.ctx, tt.args.req)
-			require.Equal(t, tt.err, err)
-		})
+				err := service.Delete(tt.args.ctx, tt.args.req)
+				if err != nil {
+					s.Require().Equal(tt.err.Error(), err.Error())
+				}
+			},
+		)
 	}
 }

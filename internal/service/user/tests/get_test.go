@@ -7,18 +7,20 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/gojuno/minimock/v3"
-	"github.com/stretchr/testify/require"
 
 	"github.com/Arturyus92/auth/internal/model"
 	"github.com/Arturyus92/auth/internal/repository"
-	repoMocks "github.com/Arturyus92/auth/internal/repository/mocks"
+	modelRepo "github.com/Arturyus92/auth/internal/repository/user/model"
 	"github.com/Arturyus92/auth/internal/service/user"
+	"github.com/Arturyus92/platform_common/pkg/db"
+	"github.com/Arturyus92/platform_common/pkg/db/transaction"
 )
 
-func TestGet(t *testing.T) {
-	t.Parallel()
-	type userRepositoryMockFunc func(mc *minimock.Controller) repository.UserRepository
+func (s *TestSuite) TestGet() {
+	s.T().Parallel()
+	type userRepositoryMockFunc func() repository.UserRepository
+	type logRepositoryMockFunc func() repository.LogRepository
+	type transactorMockFunc func() db.Transactor
 
 	type args struct {
 		ctx context.Context
@@ -27,22 +29,27 @@ func TestGet(t *testing.T) {
 
 	var (
 		ctx = context.Background()
-		mc  = minimock.NewController(t)
 
 		id        = gofakeit.Int64()
 		name      = gofakeit.Animal()
 		email     = gofakeit.Animal()
 		password  = gofakeit.Animal()
+		role      = gofakeit.Int32()
 		createdAt = gofakeit.Date()
 		updatedAt = gofakeit.Date()
 
 		repoErr = fmt.Errorf("repo error")
+
+		filter = modelRepo.UserFilter{
+			ID: &id,
+		}
 
 		res = &model.User{
 			ID:        id,
 			Name:      name,
 			Email:     email,
 			Password:  password,
+			Role:      role,
 			CreatedAt: createdAt,
 			UpdatedAt: sql.NullTime{
 				Time:  updatedAt,
@@ -57,6 +64,8 @@ func TestGet(t *testing.T) {
 		want               *model.User
 		err                error
 		userRepositoryMock userRepositoryMockFunc
+		logRepositoryMock  logRepositoryMockFunc
+		transactorMock     transactorMockFunc
 	}{
 		{
 			name: "success case",
@@ -66,10 +75,15 @@ func TestGet(t *testing.T) {
 			},
 			want: res,
 			err:  nil,
-			userRepositoryMock: func(mc *minimock.Controller) repository.UserRepository {
-				mock := repoMocks.NewUserRepositoryMock(mc)
-				mock.GetMock.Expect(ctx, id).Return(res, nil)
-				return mock
+			userRepositoryMock: func() repository.UserRepository {
+				return s.userRepositoryMock.GetMock.Expect(ctx, filter).Return(res, nil)
+
+			},
+			logRepositoryMock: func() repository.LogRepository {
+				return s.logRepositoryMock
+			},
+			transactorMock: func() db.Transactor {
+				return s.transactorMock
 			},
 		},
 		{
@@ -78,27 +92,38 @@ func TestGet(t *testing.T) {
 				ctx: ctx,
 				req: id,
 			},
-			want: nil,
+			want: res,
 			err:  repoErr,
-			userRepositoryMock: func(mc *minimock.Controller) repository.UserRepository {
-				mock := repoMocks.NewUserRepositoryMock(mc)
-				mock.GetMock.Expect(ctx, id).Return(nil, repoErr)
-				return mock
+			userRepositoryMock: func() repository.UserRepository {
+				return s.userRepositoryMock.GetMock.Expect(ctx, filter).Return(nil, repoErr)
+			},
+			logRepositoryMock: func() repository.LogRepository {
+				return s.logRepositoryMock
+			},
+			transactorMock: func() db.Transactor {
+				return s.transactorMock
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+		s.T().Run(
+			tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			userRepoMock := tt.userRepositoryMock(mc)
-			service := user.NewMockService(userRepoMock)
+				userRepoMock := tt.userRepositoryMock()
+				logRepoMock := tt.logRepositoryMock()
+				txManagerMock := transaction.NewTransactionManager(tt.transactorMock())
+				service := user.NewService(userRepoMock, txManagerMock, logRepoMock)
 
-			res, err := service.Get(tt.args.ctx, tt.args.req)
-			require.Equal(t, tt.err, err)
-			require.Equal(t, tt.want, res)
-		})
+				res, err := service.Get(tt.args.ctx, tt.args.req)
+				if err != nil {
+					s.Require().Equal(tt.err, err)
+					return
+				}
+				s.Require().Equal(tt.want, res)
+			},
+		)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Arturyus92/auth/internal/model"
 	"github.com/Arturyus92/auth/internal/repository/user/converter"
@@ -36,13 +37,19 @@ func NewRepository(db db.Client) *Repo {
 }
 
 // Get - ...
-func (r *Repo) Get(ctx context.Context, id int64) (*model.User, error) {
-	// Делаем запрос на получение записи из таблицы auth
-	builderSelectOne := sq.Select(colUserID, colName, colEmail, colRole, colCreatedAt, colUpdatedAt).
+func (r *Repo) Get(ctx context.Context, filter modelRepo.UserFilter) (*model.User, error) {
+	// Делаем запрос на получение записи по username из таблицы auth
+	builderSelectOne := sq.Select(colUserID, colName, colEmail, colRole, colCreatedAt, colUpdatedAt, colPassword).
 		From(tableName).
-		PlaceholderFormat(sq.Dollar).
-		Where(sq.Eq{colUserID: id}).
-		Limit(1)
+		PlaceholderFormat(sq.Dollar)
+
+	if filter.ID != nil {
+		builderSelectOne = builderSelectOne.Where(sq.Eq{colUserID: filter.ID})
+	}
+
+	if filter.Name != nil {
+		builderSelectOne = builderSelectOne.Where(sq.Eq{colName: filter.Name})
+	}
 
 	query, args, err := builderSelectOne.ToSql()
 	if err != nil {
@@ -66,6 +73,13 @@ func (r *Repo) Get(ctx context.Context, id int64) (*model.User, error) {
 
 // Create - ...
 func (r *Repo) Create(ctx context.Context, user *model.UserToCreate) (int64, error) {
+	//Хэш пароля по DefaultCost
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return 0, err
+	}
+	user.Password = string(hashedPassword)
+
 	// Делаем запрос на вставку записи в таблицу auth
 	builderInsert := sq.Insert(tableName).
 		PlaceholderFormat(sq.Dollar).
