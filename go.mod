@@ -1,6 +1,6 @@
 module github.com/Arturyus92/auth
 
-go 1.19
+go 1.21.9
 
 require (
 	github.com/Arturyus92/platform_common v1.0.4
