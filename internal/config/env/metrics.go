@@ -27,7 +27,7 @@ func NewPrometheusConfig() (*prometheusConfig, error) {
 		return nil, errors.New("prometheus host not found")
 	}
 
-	port := os.Getenv(prometheusHostEnvName)
+	port := os.Getenv(prometheusPortEnvName)
 	if len(port) == 0 {
 		return nil, errors.New("prometheus port not found")
 	}
