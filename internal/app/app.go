@@ -7,23 +7,15 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
-	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/natefinch/lumberjack"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/Arturyus92/auth/internal/config"
 	"github.com/Arturyus92/auth/internal/interceptor"
-	"github.com/Arturyus92/auth/internal/logger"
-	"github.com/Arturyus92/auth/internal/metric"
 	descAccess "github.com/Arturyus92/auth/pkg/access_v1"
 	descAuth "github.com/Arturyus92/auth/pkg/auth_v1"
 	descUser "github.com/Arturyus92/auth/pkg/user_v1"
@@ -45,11 +37,10 @@ func init() {
 
 // App - ...
 type App struct {
-	serviceProvider  *serviceProvider
-	grpcServer       *grpc.Server
-	httpServer       *http.Server
-	swaggerServer    *http.Server
-	prometheusServer *http.Server
+	serviceProvider *serviceProvider
+	grpcServer      *grpc.Server
+	httpServer      *http.Server
+	swaggerServer   *http.Server
 }
 
 // NewApp - ...
@@ -72,7 +63,7 @@ func (a *App) Run() error {
 	}()
 
 	wg := sync.WaitGroup{}
-	wg.Add(4)
+	wg.Add(3)
 
 	go func() {
 		defer wg.Done()
@@ -101,15 +92,6 @@ func (a *App) Run() error {
 		}
 	}()
 
-	go func() {
-		defer wg.Done()
-
-		err := a.runPrometheusServer()
-		if err != nil {
-			log.Fatalf("failed to run Prometheus server: %v", err)
-		}
-	}()
-
 	wg.Wait()
 
 	return nil
@@ -122,7 +104,6 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initGRPCServer,
 		a.initHTTPServer,
 		a.initSwaggerServer,
-		a.initPrometheusServer,
 	}
 
 	for _, f := range inits {
@@ -154,11 +135,7 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.UnaryInterceptor(
-			grpcMiddleware.ChainUnaryServer(
-				interceptor.LogInterceptor,
-				interceptor.ValidateInterceptor,
-				interceptor.MetricsInterceptor,
-			),
+			interceptor.ValidateInterceptor,
 		),
 	)
 
@@ -218,24 +195,6 @@ func (a *App) initSwaggerServer(_ context.Context) error {
 	return nil
 }
 
-func (a *App) initPrometheusServer(ctx context.Context) error {
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.Handler())
-
-	a.prometheusServer = &http.Server{
-		Addr:              a.serviceProvider.PrometheusConfig().Address(),
-		Handler:           mux,
-		ReadHeaderTimeout: readHeaderTimeout,
-	}
-
-	err := metric.Init(ctx)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (a *App) runGRPCServer() error {
 	log.Printf("GRPC server is running on %s", a.serviceProvider.GRPCConfig().Address())
 
@@ -256,16 +215,6 @@ func (a *App) runHTTPServer() error {
 	log.Printf("HTTP server is running on %s", a.serviceProvider.HTTPConfig().Address())
 
 	err := a.httpServer.ListenAndServe()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-func (a *App) runPrometheusServer() error {
-	log.Printf("Prometheus server is running on %s", a.serviceProvider.PrometheusConfig().Address())
-
-	err := a.prometheusServer.ListenAndServe()
 	if err != nil {
 		return err
 	}
@@ -322,39 +271,4 @@ func serveSwaggerFile(path string) http.HandlerFunc {
 
 		log.Printf("Served swagger file: %s", path)
 	}
-}
-
-func (a *App) initLogger(_ context.Context) error {
-	stdout := zapcore.AddSync(os.Stdout)
-
-	file := zapcore.AddSync(&lumberjack.Logger{
-		Filename:   "logs/app.log",
-		MaxSize:    10, // megabytes
-		MaxBackups: 3,
-		MaxAge:     7, // days
-	})
-
-	productionCfg := zap.NewProductionEncoderConfig()
-	productionCfg.TimeKey = "timestamp"
-	productionCfg.EncodeTime = zapcore.ISO8601TimeEncoder
-
-	developmentCfg := zap.NewDevelopmentEncoderConfig()
-	developmentCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
-
-	consoleEncoder := zapcore.NewConsoleEncoder(developmentCfg)
-	fileEncoder := zapcore.NewJSONEncoder(productionCfg)
-
-	cfg := a.serviceProvider.LoggerConfig()
-	level, err := zapcore.ParseLevel(cfg.LoggerLevel())
-	if err != nil {
-		return err
-	}
-
-	loggerCore := zapcore.NewTee(
-		zapcore.NewCore(consoleEncoder, stdout, level),
-		zapcore.NewCore(fileEncoder, file, level),
-	)
-
-	logger.Init(loggerCore)
-	return nil
 }

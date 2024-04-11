@@ -4,16 +4,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// PrometheusConfig - ...
-type PrometheusConfig interface {
-	Address() string
-}
-
-// LoggerConfig - ...
-type LoggerConfig interface {
-	LoggerLevel() string
-}
-
 // GRPCConfig - ...
 type GRPCConfig interface {
 	Address() string

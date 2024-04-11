@@ -25,12 +25,10 @@ import (
 )
 
 type serviceProvider struct {
-	pgConfig         config.PGConfig
-	grpcConfig       config.GRPCConfig
-	httpConfig       config.HTTPConfig
-	swaggerConfig    config.SwaggerConfig
-	loggerConfig     config.LoggerConfig
-	prometheusConfig config.PrometheusConfig
+	pgConfig      config.PGConfig
+	grpcConfig    config.GRPCConfig
+	httpConfig    config.HTTPConfig
+	swaggerConfig config.SwaggerConfig
 
 	dbClient         db.Client
 	txManager        db.TxManager
@@ -50,34 +48,6 @@ type serviceProvider struct {
 
 func newServiceProvider() *serviceProvider {
 	return &serviceProvider{}
-}
-
-// PrometheusConfig - ...
-func (s *serviceProvider) PrometheusConfig() config.PrometheusConfig {
-	if s.prometheusConfig == nil {
-		cfg, err := env.NewPrometheusConfig()
-		if err != nil {
-			log.Fatalf("failed to get prometheus config: %s", err.Error())
-		}
-
-		s.prometheusConfig = cfg
-	}
-
-	return s.prometheusConfig
-}
-
-// LoggerConfig - ...
-func (s *serviceProvider) LoggerConfig() config.LoggerConfig {
-	if s.loggerConfig == nil {
-		cfg, err := env.NewLoggerConfig()
-		if err != nil {
-			log.Fatalf("failed to get logger config: %s", err.Error())
-		}
-
-		s.loggerConfig = cfg
-	}
-
-	return s.loggerConfig
 }
 
 // PGConfig - ...
