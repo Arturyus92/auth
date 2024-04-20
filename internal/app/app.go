@@ -225,10 +225,11 @@ func (a *App) initLogger(_ context.Context) error {
 	consoleEncoder := zapcore.NewConsoleEncoder(developmentCfg)
 	fileEncoder := zapcore.NewJSONEncoder(productionCfg)
 
-	cfg := a.serviceProvider.LoggerConfig()
-	level, err := zapcore.ParseLevel(cfg.LoggerLevel())
-	if err != nil {
-		return err
+	logLevel := a.serviceProvider.LoggerConfig().LoggerLevel()
+	//level, err := zapcore.ParseLevel(cfg.LoggerLevel())
+	var level zapcore.Level
+	if err := level.Set(logLevel); err != nil {
+		log.Fatalf("failed to set log level: %v", err)
 	}
 
 	loggerCore := zapcore.NewTee(
