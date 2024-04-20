@@ -232,7 +232,7 @@ func (a *App) initLogger(_ context.Context) error {
 	}
 
 	loggerCore := zapcore.NewTee(
-		zapcore.NewCore(consoleEncoder, stdout, level),
+		zapcore.NewCore(consoleEncoder, stdout, zap.NewAtomicLevelAt(level)),
 		//zapcore.NewCore(fileEncoder, file, level),
 	)
 
