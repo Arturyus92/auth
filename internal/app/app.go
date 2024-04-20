@@ -13,6 +13,7 @@ import (
 
 	"github.com/GalichAnton/platform_common/pkg/logger"
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -106,7 +107,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
 		a.initConfig,
 		a.initServiceProvider,
-		a.initLogger,
+		//a.initLogger,
 		a.initGRPCServer,
 		a.initHTTPServer,
 		a.initSwaggerServer,
@@ -138,6 +139,8 @@ func (a *App) initServiceProvider(_ context.Context) error {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) error {
+	logger.Init(getCore(getAtomicLevel(a.serviceProvider.LoggerConfig().LoggerLevel())))
+
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.UnaryInterceptor(
@@ -204,40 +207,77 @@ func (a *App) initSwaggerServer(_ context.Context) error {
 	return nil
 }
 
-func (a *App) initLogger(_ context.Context) error {
-	stdout := zapcore.AddSync(os.Stdout)
-	/*
-		file := zapcore.AddSync(&lumberjack.Logger{
-			Filename:   "logs/app.log",
-			MaxSize:    10, // megabytes
-			MaxBackups: 3,
-			MaxAge:     7, // days
-		})*/
+/*
+	func (a *App) initLogger(_ context.Context) error {
+		stdout := zapcore.AddSync(os.Stdout)
 
-	//productionCfg := zap.NewProductionEncoderConfig()
-	//productionCfg.TimeKey = "timestamp"
-	//productionCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+			file := zapcore.AddSync(&lumberjack.Logger{
+				Filename:   "logs/app.log",
+				MaxSize:    10, // megabytes
+				MaxBackups: 3,
+				MaxAge:     7, // days
+			})
+
+		//productionCfg := zap.NewProductionEncoderConfig()
+		//productionCfg.TimeKey = "timestamp"
+		//productionCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+
+		developmentCfg := zap.NewDevelopmentEncoderConfig()
+		developmentCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+
+		consoleEncoder := zapcore.NewConsoleEncoder(developmentCfg)
+		//fileEncoder := zapcore.NewJSONEncoder(productionCfg)
+
+		logLevel := a.serviceProvider.LoggerConfig().LoggerLevel()
+
+		var level zapcore.Level
+		if err := level.Set(logLevel); err != nil {
+			log.Fatalf("failed to set log level: %v", err)
+		}
+
+		loggerCore := zapcore.NewTee(
+			zapcore.NewCore(consoleEncoder, stdout, zap.NewAtomicLevelAt(level)),
+			//zapcore.NewCore(fileEncoder, file, level),
+		)
+
+		logger.Init(loggerCore)
+		return nil
+	}
+*/
+func getCore(level zap.AtomicLevel) zapcore.Core {
+	stdout := zapcore.AddSync(os.Stdout)
+
+	file := zapcore.AddSync(&lumberjack.Logger{
+		Filename:   "logs/app.log",
+		MaxSize:    10, // megabytes
+		MaxBackups: 3,
+		MaxAge:     7, // days
+	})
+
+	productionCfg := zap.NewProductionEncoderConfig()
+	productionCfg.TimeKey = "timestamp"
+	productionCfg.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	developmentCfg := zap.NewDevelopmentEncoderConfig()
 	developmentCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
 
 	consoleEncoder := zapcore.NewConsoleEncoder(developmentCfg)
-	//fileEncoder := zapcore.NewJSONEncoder(productionCfg)
+	fileEncoder := zapcore.NewJSONEncoder(productionCfg)
 
-	logLevel := a.serviceProvider.LoggerConfig().LoggerLevel()
+	return zapcore.NewTee(
+		zapcore.NewCore(consoleEncoder, stdout, level),
+		zapcore.NewCore(fileEncoder, file, level),
+	)
+}
 
+func getAtomicLevel(logLevel string) zap.AtomicLevel {
 	var level zapcore.Level
+
 	if err := level.Set(logLevel); err != nil {
 		log.Fatalf("failed to set log level: %v", err)
 	}
 
-	loggerCore := zapcore.NewTee(
-		zapcore.NewCore(consoleEncoder, stdout, zap.NewAtomicLevelAt(level)),
-		//zapcore.NewCore(fileEncoder, file, level),
-	)
-
-	logger.Init(loggerCore)
-	return nil
+	return zap.NewAtomicLevelAt(level)
 }
 
 func (a *App) runGRPCServer() error {
