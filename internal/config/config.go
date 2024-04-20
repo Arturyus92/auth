@@ -4,6 +4,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// LoggerConfig - ...
+type LoggerConfig interface {
+	LoggerLevel() string
+}
+
 // GRPCConfig - ...
 type GRPCConfig interface {
 	Address() string
