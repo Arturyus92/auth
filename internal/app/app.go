@@ -107,6 +107,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
 		a.initConfig,
 		a.initServiceProvider,
+		a.initLogger,
 		a.initGRPCServer,
 		a.initHTTPServer,
 		a.initSwaggerServer,
@@ -138,7 +139,7 @@ func (a *App) initServiceProvider(_ context.Context) error {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) error {
-	logger.Init(getCore(getAtomicLevel(a.serviceProvider.LoggerConfig().LoggerLevel())))
+	//logger.Init(getCore(getAtomicLevel(a.serviceProvider.LoggerConfig().LoggerLevel())))
 
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
@@ -206,6 +207,42 @@ func (a *App) initSwaggerServer(_ context.Context) error {
 	return nil
 }
 
+func (a *App) initLogger(_ context.Context) error {
+	stdout := zapcore.AddSync(os.Stdout)
+
+	file := zapcore.AddSync(&lumberjack.Logger{
+		Filename:   "logs/app.log",
+		MaxSize:    10, // megabytes
+		MaxBackups: 3,
+		MaxAge:     7, // days
+	})
+
+	productionCfg := zap.NewProductionEncoderConfig()
+	productionCfg.TimeKey = "timestamp"
+	productionCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	developmentCfg := zap.NewDevelopmentEncoderConfig()
+	developmentCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+
+	consoleEncoder := zapcore.NewConsoleEncoder(developmentCfg)
+	fileEncoder := zapcore.NewJSONEncoder(productionCfg)
+
+	var level zapcore.Level
+
+	if err := level.Set(a.serviceProvider.LoggerConfig().LoggerLevel()); err != nil {
+		log.Fatalf("failed to set log level: %v", err)
+	}
+
+	core := zapcore.NewTee(
+		zapcore.NewCore(consoleEncoder, stdout, level),
+		zapcore.NewCore(fileEncoder, file, level),
+	)
+
+	logger.Init(core)
+	return nil
+}
+
+/*
 func getCore(level zap.AtomicLevel) zapcore.Core {
 	stdout := zapcore.AddSync(os.Stdout)
 
@@ -240,7 +277,7 @@ func getAtomicLevel(logLevel string) zap.AtomicLevel {
 	}
 
 	return zap.NewAtomicLevelAt(level)
-}
+}*/
 
 func (a *App) runGRPCServer() error {
 	log.Printf("GRPC server is running on %s", a.serviceProvider.GRPCConfig().Address())
