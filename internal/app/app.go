@@ -68,8 +68,6 @@ func (a *App) Run() error {
 		closer.Wait()
 	}()
 
-	logger.Init(getCore(getAtomicLevel(a.serviceProvider.LoggerConfig().LoggerLevel())))
-
 	wg := sync.WaitGroup{}
 	wg.Add(3)
 
@@ -140,6 +138,8 @@ func (a *App) initServiceProvider(_ context.Context) error {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) error {
+	logger.Init(getCore(getAtomicLevel(a.serviceProvider.LoggerConfig().LoggerLevel())))
+
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.UnaryInterceptor(
