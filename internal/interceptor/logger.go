@@ -18,7 +18,7 @@ func LogInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServer
 		logger.Error(err.Error(), zap.String("method", info.FullMethod), zap.Any("req", req))
 	}
 
-	logger.Info("request success" /*zap.String("method", info.FullMethod), zap.Any("req", req),*/, zap.Duration("duration", time.Since(now)))
+	logger.Info("request success", zap.String("method", info.FullMethod), zap.Any("req", req), zap.Duration("duration", time.Since(now)))
 
 	return res, err
 }
