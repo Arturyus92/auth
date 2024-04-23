@@ -121,7 +121,7 @@ vendor-proto:
 		fi
 
 grpc-load-test:
-	ghz \
+	bin/ghz.exe \
 		--proto api/user_v1/user.proto \
 		--import-paths=./vendor.protogen \
 		--call user_v1.UserV1.Get \
@@ -132,7 +132,7 @@ grpc-load-test:
 		localhost:${GRPC_PORT}
 
 grpc-error-load-test:
-	ghz \
+	bin/ghz.exe \
 		--proto api/user_v1/user.proto \
 		--import-paths=./vendor.protogen \
 		--call user_v1.UserV1.Get \
@@ -140,4 +140,4 @@ grpc-error-load-test:
 		--rps 100 \
 		--total 3000 \
 		--insecure \
-		SERVICE_HOST:${GRPC_PORT}
+		localhost:${GRPC_PORT}
