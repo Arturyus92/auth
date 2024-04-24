@@ -2,6 +2,8 @@ version: '3'
 
 volumes:
   postgres_volume_prod:
+  prometheus_data:
+  grafana_data:
 
 services:
   pg-auth:
@@ -22,6 +24,26 @@ services:
     restart: on-failure
     environment:
       DB_HOST: pg-auth
+    networks:
+      - services-network
+
+  prometheus:
+    image: prom/prometheus:v2.37.9
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    networks:
+      - services-network
+
+  grafana:
+    image: grafana/grafana-oss:10.0.3
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
     networks:
       - services-network
 

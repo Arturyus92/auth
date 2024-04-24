@@ -1,4 +1,4 @@
-FROM golang:1.19.4-alpine AS builder
+FROM golang:1.21.9-alpine AS builder
 
 COPY . /github.com/Arturyus92/auth/source/
 WORKDIR /github.com/Arturyus92/auth/source/
