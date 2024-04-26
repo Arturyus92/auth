@@ -24,6 +24,7 @@ import (
 	"github.com/Arturyus92/auth/internal/interceptor"
 	"github.com/Arturyus92/auth/internal/logger"
 	"github.com/Arturyus92/auth/internal/metric"
+	"github.com/Arturyus92/auth/internal/rate_limiter"
 	descAccess "github.com/Arturyus92/auth/pkg/access_v1"
 	descAuth "github.com/Arturyus92/auth/pkg/auth_v1"
 	descUser "github.com/Arturyus92/auth/pkg/user_v1"
@@ -152,10 +153,13 @@ func (a *App) initServiceProvider(_ context.Context) error {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) error {
+	rateLimiter := rate_limiter.NewTokenBucketLimiter(ctx, 10, time.Second)
+
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.UnaryInterceptor(
 			grpcMiddleware.ChainUnaryServer(
+				interceptor.NewLimiterInterceptor(rateLimiter).Unary,
 				interceptor.LogInterceptor,
 				interceptor.ValidateInterceptor,
 				interceptor.MetricsInterceptor,
